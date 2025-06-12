@@ -6,7 +6,8 @@ const app = express();
 require('dotenv').config();
 
 // Import the models used in these routes - DO NOT MODIFY
-const { Band, Musician } = require('./db/models');
+const { Band, Musician, Instrument } = require('./db/models');
+const instrument = require('./db/models/instrument');
 
 // Express using json - DO NOT MODIFY
 app.use(express.json());
@@ -28,7 +29,7 @@ app.get('/bands-lazy/:id', async (req, res, next) => {
 // STEP 1: Example of eager loading
 app.get('/bands-eager/:id', async (req, res, next) => {
     const payload = await Band.findByPk(req.params.id, {
-        include: { model: Musician },
+        include: Musician,
         order: [ [Musician, 'firstName'] ]
     });
     res.json(payload);
@@ -41,24 +42,38 @@ app.get('/bands-lazy', async (req, res, next) => {
     for(let i = 0; i < allBands.length; i++){
         const band = allBands[i];
         // Your code here
+        const musicians = await band.getMusicians({ order: [ [ 'firstName' ] ] });
         const bandData = {
             id: band.id,
             name: band.name,
             createdAt: band.createdAt,
             updatedAt: band.updatedAt,
             // Your code here
+            Musicians: musicians
         };
         payload.push(bandData);
     }
-    res.json(payload)
+    res.json(payload);
 });
 
 // STEP 3: Eager loading all bands
 app.get('/bands-eager', async (req, res, next) => {
     const payload = await Band.findAll({
         // Your code here
+        include: Musician,
+        order: [ ['name'], [Musician, 'firstName']]
+
     });
     res.json(payload);
+});
+
+app.get('/music-instruments', async (req, res, next) => {
+    const instruments = await Musician.findAll({
+        include: Instrument,
+        order: [ ['firstName'], [ Instrument, 'type' ] ]
+    });
+
+    res.json(instruments);
 });
 
 // Root route - DO NOT MODIFY
